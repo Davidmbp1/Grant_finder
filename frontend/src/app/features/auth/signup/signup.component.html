@@ -1,0 +1,41 @@
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Create an Account</h2>
+        <p class="auth-subtitle">Join GrantFinder to save and track opportunities.</p>
+
+        <form (ngSubmit)="onSubmit()" #signupForm="ngForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" [(ngModel)]="email" required placeholder="you@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" [(ngModel)]="password" required minlength="8"
+                    placeholder="Min 8 chars">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" [(ngModel)]="confirmPassword"
+                    required placeholder="Confirm password">
+            </div>
+
+            @if (errorMessage) {
+            <div class="error-banner">{{ errorMessage }}</div>
+            }
+
+            <button type="submit" class="btn-submit" [disabled]="signupForm.invalid || isLoading">
+                @if (isLoading) {
+                <span class="spinner"></span> Creating Account...
+                } @else {
+                Sign Up
+                }
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a routerLink="/login">Log in</a>
+        </div>
+    </div>
+</div>

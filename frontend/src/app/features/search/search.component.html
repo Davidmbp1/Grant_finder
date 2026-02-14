@@ -1,0 +1,541 @@
+<div class="app-shell">
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-left">
+      <button class="mobile-menu-btn" (click)="toggleMobileSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12h18M3 6h18M3 18h18"/>
+        </svg>
+      </button>
+      <div class="logo">
+        <span class="logo-icon">🎯</span>
+        <span class="logo-grant">Grant</span><span class="logo-finder">Finder</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="search-bar">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+        </svg>
+        <input type="text"
+               [ngModel]="query()"
+               (ngModelChange)="onSearch($event)"
+               placeholder="Search grants... e.g. 'cancer research', 'AI', 'climate'"
+               class="search-input"/>
+        @if (totalResults() > 0 && !isLoading()) {
+          <span class="result-badge">{{ totalResults() | number }}</span>
+        }
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="header-stats">
+        <div class="stat-pill">
+          <span class="stat-num">{{ stats().total | number }}</span>
+          <span class="stat-label">grants</span>
+        </div>
+      </div>
+      <button class="icon-btn" (click)="themeService.toggle()" title="Toggle theme">
+        {{ themeService.darkMode() ? '☀️' : '🌙' }}
+      </button>
+      @if (authService.currentUser()) {
+        <div class="user-menu">
+          <span class="user-email">{{ authService.currentUser()?.email }}</span>
+          <button class="btn-ghost" (click)="authService.logout()">Logout</button>
+        </div>
+      } @else {
+        <a routerLink="/login" class="btn-primary-sm">Log In</a>
+      }
+    </div>
+  </header>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <div class="main-layout">
+
+    <!-- Mobile overlay -->
+    @if (mobileSidebarOpen()) {
+      <div class="sidebar-overlay" (click)="mobileSidebarOpen.set(false)"></div>
+    }
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" [class.open]="mobileSidebarOpen()">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title">Filters</h2>
+        @if (hasActiveFilters()) {
+          <button class="btn-clear" (click)="clearFilters()">Clear all</button>
+        }
+      </div>
+
+      <!-- ⏰ Deadline -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('deadline')">
+          <span class="facet-icon">⏰</span>
+          <span class="facet-label">Deadline</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarDeadline()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarDeadline()) {
+          <div class="facet-body">
+            @for (preset of deadlinePresets; track preset.value) {
+              <label class="radio-option" (click)="selectDeadline(preset.value)">
+                <span class="radio-circle" [class.active]="selectedDeadline() === preset.value"></span>
+                <span class="option-text">{{ preset.label }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 💰 Amount -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('amount')">
+          <span class="facet-icon">💰</span>
+          <span class="facet-label">Amount</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarAmount()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarAmount()) {
+          <div class="facet-body">
+            @for (preset of amountPresets; track preset.label; let i = $index) {
+              <label class="radio-option" (click)="selectAmount(i)">
+                <span class="radio-circle" [class.active]="selectedAmountIdx() === i"></span>
+                <span class="option-text">{{ preset.label }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 🏛️ Agency -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('agency')">
+          <span class="facet-icon">🏛️</span>
+          <span class="facet-label">Agency</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarAgency()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarAgency()) {
+          <div class="facet-body">
+            <div class="facet-search">
+              <svg class="facet-search-icon" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+              </svg>
+              <input type="text"
+                     [ngModel]="agencySearch()"
+                     (ngModelChange)="agencySearch.set($event)"
+                     placeholder="Search agencies..."
+                     class="facet-search-input"/>
+            </div>
+            @for (ag of filteredAgencies(); track ag.value) {
+              <label class="check-option" [class.active]="selectedAgency().includes(ag.value)" (click)="toggleAgency(ag.value)">
+                <span class="check-box" [class.checked]="selectedAgency().includes(ag.value)">
+                  @if (selectedAgency().includes(ag.value)) {
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                  }
+                </span>
+                <span class="option-text">{{ ag.value }}</span>
+                <span class="option-count">{{ ag.count | number }}</span>
+              </label>
+            }
+            @if (!agencyShowAll() && hiddenAgencyCount() > 0 && !agencySearch()) {
+              <button class="show-more-btn" (click)="agencyShowAll.set(true)">
+                Show {{ hiddenAgencyCount() }} more
+              </button>
+            }
+            @if (agencyShowAll() && !agencySearch()) {
+              <button class="show-more-btn" (click)="agencyShowAll.set(false)">
+                Show less
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 🌍 Region -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('region')">
+          <span class="facet-icon">🌍</span>
+          <span class="facet-label">Region</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarRegion()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarRegion()) {
+          <div class="facet-body">
+            @for (r of aggregations().regions; track r.value) {
+              <label class="check-option" [class.active]="selectedRegion().includes(r.value)" (click)="toggleRegion(r.value)">
+                <span class="check-box" [class.checked]="selectedRegion().includes(r.value)">
+                  @if (selectedRegion().includes(r.value)) {
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                  }
+                </span>
+                <span class="option-text">{{ r.value }}</span>
+                <span class="option-count">{{ r.count | number }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 🏳️ Country -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('country')">
+          <span class="facet-icon">🏳️</span>
+          <span class="facet-label">Country</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarCountry()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarCountry()) {
+          <div class="facet-body">
+            @if ((aggregations().countries || []).length > 5) {
+              <div class="facet-search">
+                <svg class="facet-search-icon" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                </svg>
+                <input type="text"
+                       [ngModel]="countrySearch()"
+                       (ngModelChange)="countrySearch.set($event)"
+                       placeholder="Search countries..."
+                       class="facet-search-input"/>
+              </div>
+            }
+            @for (c of filteredCountries(); track c.value) {
+              <label class="check-option" [class.active]="selectedCountry().includes(c.value)" (click)="toggleCountry(c.value)">
+                <span class="check-box" [class.checked]="selectedCountry().includes(c.value)">
+                  @if (selectedCountry().includes(c.value)) {
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                  }
+                </span>
+                <span class="option-text">{{ c.value }}</span>
+                <span class="option-count">{{ c.count | number }}</span>
+              </label>
+            }
+            @if (!countryShowAll() && hiddenCountryCount() > 0 && !countrySearch()) {
+              <button class="show-more-btn" (click)="countryShowAll.set(true)">
+                Show {{ hiddenCountryCount() }} more
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- 📂 Category -->
+      <div class="facet">
+        <button class="facet-header" (click)="toggleSidebar('category')">
+          <span class="facet-icon">📂</span>
+          <span class="facet-label">Category</span>
+          <svg class="facet-chevron" [class.collapsed]="!showSidebarCategory()" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        @if (showSidebarCategory()) {
+          <div class="facet-body">
+            @for (cat of categoriesList; track cat) {
+              <label class="check-option" [class.active]="selectedCategories().includes(cat)" (click)="toggleCategory(cat)">
+                <span class="check-box" [class.checked]="selectedCategories().includes(cat)">
+                  @if (selectedCategories().includes(cat)) {
+                    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg>
+                  }
+                </span>
+                <span class="option-text">{{ cat }}</span>
+              </label>
+            }
+          </div>
+        }
+      </div>
+    </aside>
+
+    <!-- ===== RESULTS ===== -->
+    <main class="results-area">
+      <!-- Results toolbar: tabs + sort -->
+      <div class="results-toolbar">
+        <div class="status-tabs">
+          <button class="tab" [class.active]="selectedStatus() === 'open'" (click)="selectStatus('open')">
+            <span class="tab-dot open"></span> Open
+          </button>
+          <button class="tab" [class.active]="selectedStatus() === 'upcoming'" (click)="selectStatus('upcoming')">
+            <span class="tab-dot upcoming"></span> Upcoming
+          </button>
+          <button class="tab" [class.active]="selectedStatus() === 'closed'" (click)="selectStatus('closed')">
+            <span class="tab-dot closed"></span> Closed
+          </button>
+          @if (showDiagnostics()) {
+            <button class="tab" [class.active]="selectedStatus() === 'needs_review'" (click)="selectStatus('needs_review')">
+              <span class="tab-dot review"></span> Needs Review
+            </button>
+          }
+        </div>
+        <div class="toolbar-right">
+          <button class="diagnostics-btn" [class.active]="showDiagnostics()" (click)="toggleDiagnostics()" title="Developer diagnostics">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          </button>
+          <div class="sort-dropdown" (click)="showSortDropdown.set(!showSortDropdown())">
+            <button class="sort-btn">
+              {{ getSortLabel() }}
+              <svg class="sort-chevron" [class.open]="showSortDropdown()" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+            @if (showSortDropdown()) {
+              <div class="sort-panel" (click)="$event.stopPropagation()">
+                @for (opt of sortOptions; track opt.value) {
+                  <button class="sort-option" [class.active]="selectedSort() === opt.value" (click)="selectSort(opt.value)">
+                    <span>{{ opt.icon }} {{ opt.label }}</span>
+                    @if (selectedSort() === opt.value) {
+                      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Filter Pills -->
+      @if (activeFilters().length > 0) {
+        <div class="active-filters">
+          @for (chip of activeFilters(); track chip.type + chip.value) {
+            <span class="filter-pill">
+              {{ chip.label }}
+              <button class="pill-x" (click)="removeFilter(chip)">✕</button>
+            </span>
+          }
+          <button class="btn-clear-inline" (click)="clearFilters()">Clear all</button>
+        </div>
+      }
+
+      <!-- Results summary -->
+      <div class="results-summary">
+        @if (isLoading()) {
+          <span>Searching...</span>
+        } @else if (totalResults() > 0) {
+          <span>Showing <strong>{{ opportunities().length }}</strong> of <strong>{{ totalResults() | number }}</strong> grants</span>
+        }
+      </div>
+
+      <!-- Loading -->
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Finding opportunities...</p>
+        </div>
+      }
+
+      <!-- Error -->
+      @if (errorMessage()) {
+        <div class="error-state">
+          <span class="error-icon">⚠️</span>
+          <h3>Something went wrong</h3>
+          <p>{{ errorMessage() }}</p>
+          <button class="btn-primary-sm" (click)="loadData()">Retry</button>
+        </div>
+      }
+
+      <!-- ===== GRANT CARDS ===== -->
+      @if (!isLoading() && opportunities().length > 0) {
+        <div class="grants-grid">
+          @for (opp of opportunities(); track opp.id; let i = $index) {
+            <article class="grant-card" [style.animation-delay]="i * 30 + 'ms'" (click)="openDetail(opp)">
+              <!-- Card top: badges -->
+              <div class="card-badges">
+                <span class="badge" [ngClass]="'badge-' + getFunderClass(opp.funder_type)">
+                  {{ opp.funder_type || 'Other' }}
+                </span>
+                @if (opp.doc_type) {
+                  <span class="badge badge-type">{{ opp.doc_type }}</span>
+                }
+                @if (opp.normalized_status) {
+                  <span class="badge" [ngClass]="'badge-status-' + opp.normalized_status">{{ getStatusLabel(opp) }}</span>
+                }
+              </div>
+
+              <!-- Save -->
+              <button class="save-btn" [class.saved]="isSaved(opp.id)" (click)="toggleSave(opp, $event)" title="Save">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </button>
+
+              <!-- Title -->
+              <h3 class="card-title">{{ opp.title }}</h3>
+
+              <!-- Agency line -->
+              @if (opp.agency_name) {
+                <div class="card-agency">{{ opp.agency_name }}
+                  @if (opp.country) { · {{ opp.country }} }
+                </div>
+              }
+
+              <!-- Summary -->
+              @if (opp.summary) {
+                <p class="card-summary">{{ opp.summary }}</p>
+              }
+
+              <!-- Meta row -->
+              <div class="card-meta">
+                @if (opp.amount_max > 0) {
+                  <span class="meta-chip amount" [ngClass]="getAmountClass(opp.amount_max)">
+                    💰 {{ formatShort(opp.amount_max, opp.currency) }}
+                  </span>
+                }
+                @if (opp.is_rolling) {
+                  <span class="meta-chip rolling">🔄 Rolling</span>
+                } @else if (getPrimaryDeadline(opp)) {
+                  <span class="meta-chip deadline" [ngClass]="getUrgencyClass(getPrimaryDeadline(opp))">
+                    ⏰ {{ getDeadlineDisplay(opp) }}
+                  </span>
+                }
+                @if (opp.source_domain) {
+                  <span class="meta-chip source">🔗 {{ opp.source_domain }}</span>
+                }
+              </div>
+
+              <!-- Hover CTA -->
+              <span class="card-cta">View →</span>
+            </article>
+          }
+        </div>
+      }
+
+      <!-- Empty states -->
+      @if (!isLoading() && opportunities().length === 0 && !query() && !hasActiveFilters()) {
+        <div class="empty-state">
+          <span class="empty-icon">🔭</span>
+          <h3>No opportunities loaded yet</h3>
+          <p>Use the search bar or wait for data to be ingested</p>
+        </div>
+      }
+      @if (!isLoading() && opportunities().length === 0 && (query() || hasActiveFilters())) {
+        <div class="empty-state">
+          <span class="empty-icon">🔍</span>
+          <h3>No matching opportunities</h3>
+          <p>Try adjusting your search or filters</p>
+          <button class="btn-primary-sm" (click)="clearFilters()">Clear all filters</button>
+        </div>
+      }
+
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <nav class="paginator">
+          <button class="pg-btn" [disabled]="currentPage() === 1" (click)="goToPage(currentPage() - 1)">‹ Prev</button>
+          @for (page of getPageNumbers(); track page) {
+            <button class="pg-btn" [class.current]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+          }
+          <button class="pg-btn" [disabled]="currentPage() === totalPages()" (click)="goToPage(currentPage() + 1)">Next ›</button>
+        </nav>
+      }
+    </main>
+  </div>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+@if (showDetail() && selectedOpportunity()) {
+  <div class="overlay" (click)="closeDetail()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-badges">
+          <span class="badge" [ngClass]="'badge-' + getFunderClass(selectedOpportunity()!.funder_type)">
+            {{ selectedOpportunity()!.funder_type || 'Other' }}
+          </span>
+          @if (selectedOpportunity()!.doc_type) {
+            <span class="badge badge-type">{{ selectedOpportunity()!.doc_type }}</span>
+          }
+          @if (selectedOpportunity()!.normalized_status) {
+            <span class="badge" [ngClass]="'badge-status-' + selectedOpportunity()!.normalized_status">
+              {{ getStatusLabel(selectedOpportunity()!) }}
+            </span>
+          }
+          @if (selectedOpportunity()!.is_rolling) {
+            <span class="badge badge-rolling">Rolling</span>
+          }
+        </div>
+        <button class="modal-x" (click)="closeDetail()">✕</button>
+      </div>
+
+      <div class="modal-title-row">
+        <h2 class="modal-title">{{ selectedOpportunity()!.title }}</h2>
+        <button class="save-btn modal-save" [class.saved]="isSaved(selectedOpportunity()!.id)" (click)="toggleSave(selectedOpportunity()!)">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          {{ isSaved(selectedOpportunity()!.id) ? 'Saved' : 'Save' }}
+        </button>
+      </div>
+
+      @if (selectedOpportunity()!.summary) {
+        <p class="modal-summary">{{ selectedOpportunity()!.summary }}</p>
+      }
+
+      @if (selectedOpportunity()!.description_html) {
+        <div class="modal-description">
+          <h3 class="modal-section-title">Description</h3>
+          <div class="modal-desc-content" [innerHTML]="selectedOpportunity()!.description_html"></div>
+        </div>
+      }
+
+      <div class="modal-grid">
+        @if (selectedOpportunity()!.agency_name) {
+          <div class="info-card"><div class="info-label">Agency</div><div class="info-value">{{ selectedOpportunity()!.agency_name }}</div></div>
+        }
+        @if (selectedOpportunity()!.amount_max > 0) {
+          <div class="info-card"><div class="info-label">Amount</div><div class="info-value money">{{ formatAmount(selectedOpportunity()!.amount_min, selectedOpportunity()!.amount_max, selectedOpportunity()!.currency) }}</div></div>
+        }
+        @if (getPrimaryDeadline(selectedOpportunity()!) || selectedOpportunity()!.is_rolling) {
+          <div class="info-card">
+            <div class="info-label">Deadline</div>
+            <div class="info-value" [ngClass]="getUrgencyClass(getPrimaryDeadline(selectedOpportunity()!))">
+              @if (selectedOpportunity()!.is_rolling) { 🔄 Rolling Deadline }
+              @else if (getPrimaryDeadline(selectedOpportunity()!)) {
+                <div>{{ getPrimaryDeadline(selectedOpportunity()!) | date:'MMMM d, yyyy' }}</div>
+                <div class="info-sub">{{ getDeadlineDisplay(selectedOpportunity()!) }}</div>
+              }
+            </div>
+          </div>
+        }
+        @if (selectedOpportunity()!.region || selectedOpportunity()!.country) {
+          <div class="info-card"><div class="info-label">Location</div><div class="info-value">{{ selectedOpportunity()!.country }} @if (selectedOpportunity()!.region) { · {{ selectedOpportunity()!.region }} }</div></div>
+        }
+        @if (selectedOpportunity()!.opportunity_number) {
+          <div class="info-card"><div class="info-label">Opportunity #</div><div class="info-value">{{ selectedOpportunity()!.opportunity_number }}</div></div>
+        }
+        @if (selectedOpportunity()!.open_date) {
+          <div class="info-card"><div class="info-label">Open Date</div><div class="info-value">{{ selectedOpportunity()!.open_date | date:'MMMM d, yyyy' }}</div></div>
+        }
+        @if (selectedOpportunity()!.source_domain) {
+          <div class="info-card"><div class="info-label">Source</div><div class="info-value">{{ selectedOpportunity()!.source_domain }}</div></div>
+        }
+      </div>
+
+      @if (selectedOpportunity()!.categories?.length || selectedOpportunity()!.eligibility?.length || selectedOpportunity()!.cfda_list?.length) {
+        <div class="modal-tags">
+          @if (selectedOpportunity()!.categories) {
+            @for (cat of selectedOpportunity()!.categories; track cat) {
+              <span class="tag tag-cat">{{ cat }}</span>
+            }
+          }
+          @if (selectedOpportunity()!.eligibility) {
+            @for (elig of selectedOpportunity()!.eligibility; track elig) {
+              <span class="tag tag-elig">{{ elig }}</span>
+            }
+          }
+          @if (selectedOpportunity()!.cfda_list) {
+            @for (cfda of selectedOpportunity()!.cfda_list; track cfda) {
+              <span class="tag tag-cfda">CFDA {{ cfda }}</span>
+            }
+          }
+        </div>
+      }
+
+      <div class="modal-actions">
+        <button class="btn-primary" (click)="visitGrant(selectedOpportunity()!.external_url)">🔗 {{ getPrimaryCTA(selectedOpportunity()!) }}</button>
+        <button class="btn-secondary" (click)="closeDetail()">Close</button>
+      </div>
+    </div>
+  </div>
+}
