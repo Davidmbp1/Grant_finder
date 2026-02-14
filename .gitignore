@@ -35,3 +35,4 @@ frontend/.angular/
 # Environment
 .env
 .env.local
+.vercel

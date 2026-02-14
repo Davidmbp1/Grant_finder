@@ -1,0 +1,28 @@
+# Docker build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Frontend (not needed in backend image)
+frontend/
+test_data/
+debug_*.html
+diagnose_*.sql
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Vercel
+.vercel/
+vercel.json
