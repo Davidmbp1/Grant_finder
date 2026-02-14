@@ -502,10 +502,10 @@ func (p *Pipeline) SaveOpportunity(ctx context.Context, opp Opportunity) error {
 		opp.CloseAt,                       // $36
 		opp.OpenAt,                        // $37
 		deadlinesJSON,                     // $38
-		opp.IsResultsPage,                // $39
-		evidenceJSON,                     // $40
-		opp.StatusConfidence,             // $41
-		opp.RollingEvidence,              // $42
+		opp.IsResultsPage,                 // $39
+		evidenceJSON,                      // $40
+		opp.StatusConfidence,              // $41
+		opp.RollingEvidence,               // $42
 	)
 	return err
 }
@@ -1034,11 +1034,11 @@ func (p *Pipeline) applyEvidenceEnrichment(ctx context.Context, opp *Opportunity
 }
 
 type EnrichmentStats struct {
-	ItemsScanned  int `json:"items_scanned"`
-	ItemsUpdated  int `json:"items_updated"`
-	PDFsParsed    int `json:"pdfs_parsed"`
+	ItemsScanned   int `json:"items_scanned"`
+	ItemsUpdated   int `json:"items_updated"`
+	PDFsParsed     int `json:"pdfs_parsed"`
 	DeadlinesAdded int `json:"deadlines_added"`
-	StatusChanges int `json:"status_changes"`
+	StatusChanges  int `json:"status_changes"`
 }
 
 func (p *Pipeline) EnrichOpportunities(ctx context.Context, domain string, onlyMissingDeadlines bool, batchSize int, maxItems int, confidenceThreshold float64) (EnrichmentStats, error) {
@@ -1250,4 +1250,3 @@ func extractFetchMeta(evidence map[string]interface{}) (*int, *int, *int, *bool)
 
 	return statusCode, bytes, durationMs, blocked
 }
-

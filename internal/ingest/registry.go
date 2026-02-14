@@ -1,10 +1,14 @@
 package ingest
 
 import (
+	"embed"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
+
+//go:embed config/sources.yaml
+var sourcesYAML embed.FS
 
 // Registry holds the configuration for all data sources.
 type Registry struct {
@@ -79,11 +83,16 @@ type DetailSelectorConfig struct {
 	Category    string `yaml:"category,omitempty"`
 }
 
-// LoadRegistry reads the sources.yaml file and returns a Registry.
+// LoadRegistry reads the embedded sources.yaml and returns a Registry.
+// The path parameter is kept for backward compatibility but ignored.
 func LoadRegistry(path string) (*Registry, error) {
-	data, err := os.ReadFile(path)
+	data, err := sourcesYAML.ReadFile("config/sources.yaml")
 	if err != nil {
-		return nil, err
+		// Fallback to filesystem for local development
+		data, err = os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Expand environment variables within the YAML content (e.g. ${API_KEY})

@@ -1,0 +1,339 @@
+sources:
+  - id: grants_gov
+    name: "Grants.gov"
+    kind: opportunity
+    region: North America
+    country: United States
+    strategy: api_grants_gov
+    description: "Official implementation of Grants.gov Search2 API"
+    fetch:
+      timeout_seconds: 30
+      max_retries: 3
+      rate_limit_rps: 2.0
+      accept_language: "en-US,en;q=0.9"
+
+  - id: eu_funding_tenders
+    name: "EU Funding & Tenders Portal"
+    kind: opportunity
+    region: Europe
+    country: European Union
+    strategy: api_eu_ft
+    base_url: "https://api.tech.ec.europa.eu/search-api/prod/rest/search"
+    api_key: ""
+    description: "European Commission Funding & Tenders Portal for Horizon Europe and other programs"
+    fetch:
+      timeout_seconds: 30
+      max_retries: 3
+      rate_limit_rps: 1.5
+      accept_language: "en-GB,en;q=0.9"
+
+  - id: prociencia_investigacion
+    name: "ProCiencia Peru - Investigacion"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://prociencia.gob.pe/investigacion-cientifica/"
+    description: "Concursos de Investigacion Cientifica"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+      rate_limit_rps: 0.5
+      accept_language: "es-PE,es;q=0.9,en;q=0.8"
+    selectors:
+      container: "article.elementor-post"
+      title: "h3.elementor-post__title a"
+      link: "h3.elementor-post__title a"
+      link_attr: "href"
+      content: ".elementor-post__excerpt"
+    detail:
+      enabled: true
+      selectors:
+        container: "body"
+        description: ".elementor-widget-text-editor"
+      parse:
+        date_locales: ["es"]
+        currency_default: "PEN"
+
+  - id: prociencia_becas
+    name: "ProCiencia Peru - Becas"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://prociencia.gob.pe/becas/"
+    description: "Concursos de Becas"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+      rate_limit_rps: 0.5
+      accept_language: "es-PE,es;q=0.9,en;q=0.8"
+    selectors:
+      container: "article.elementor-post"
+      title: "h3.elementor-post__title a"
+      link: "h3.elementor-post__title a"
+      link_attr: "href"
+      content: ".elementor-post__excerpt"
+    detail:
+      enabled: true
+      selectors:
+        container: "body"
+        description: ".elementor-widget-text-editor"
+      parse:
+        date_locales: ["es"]
+        currency_default: "PEN"
+
+  - id: prociencia_abiertas
+    name: "ProCiencia Peru - Concursos Abiertos"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://prociencia.gob.pe/calendario-de-concursos/"
+    description: "Calendario principal de concursos abiertos"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+    selectors:
+      container: "article.elementor-post"
+      title: "h3.elementor-post__title a"
+      link: "h3.elementor-post__title a"
+      content: ".elementor-post__excerpt"
+    detail:
+      enabled: true
+      selectors:
+        container: "body"
+        description: ".elementor-widget-text-editor"
+
+  - id: prociencia_concursos_abiertos
+    name: "ProCiencia Peru - Concursos Abiertos"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://prociencia.gob.pe/concursos-abiertos/"
+    description: "Lista oficial de concursos abiertos"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+    selectors:
+      container: "article.elementor-post"
+      title: ".elementor-post__title a"
+      link: ".elementor-post__title a"
+      content: ".elementor-post__excerpt"
+    detail:
+      enabled: true
+      selectors:
+        container: "main"
+        description: ".entry-content"
+        # Heuristic for deadline
+        deadline: ":contains('Fecha de cierre') ~ p, :contains('Cierre:')"
+
+  - id: proinnovate_startup
+    name: "ProInnóvate - Startup Peru"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: wordpress_rest
+    # StartUp Peru uses WP
+    base_url: "https://startup.proinnovate.gob.pe" 
+    description: "Concursos Startup Peru (WP API)"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+
+  - id: proinnovate_clima
+    name: "ProInnóvate - Cambio Climático"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://cambioclimatico.proinnovate.gob.pe/concursos/"
+    description: "Concursos Cambio Climático"
+    fetch:
+      timeout_seconds: 45
+      max_retries: 3
+    selectors:
+      container: "article, .elementor-post"
+      title: "h3 a"
+      link: "h3 a"
+      content: ".elementor-post__excerpt"
+    detail:
+      enabled: true
+      selectors:
+        container: "main"
+        description: ".elementor-widget-text-editor"
+        deadline: ":contains('Cierre de postulaciones')"
+
+  - id: proinnovate_calendario
+    name: "ProInnóvate - Calendario General"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://calendario.proinnovate.gob.pe/"
+    description: "Calendario central de concursos"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+    selectors:
+      container: "#tblConcursos tr[data-href]"
+      title: "td.font1" 
+      link: "."
+      link_attr: "data-href"
+      content: "td.font1"
+    detail:
+      enabled: true
+      selectors:
+        container: "main"
+        description: ".page__content"
+        deadline: ".page__content div:contains('Cierre')"
+      parse:
+        date_locales: ["es", "en"]
+        currency_default: "PEN"
+
+  - id: proinnovate_gobpe_campanas
+    name: "ProInnóvate - Gob.pe Campañas"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://www.gob.pe/institucion/proinnovate/campanas"
+    description: "Campañas y convocatorias oficiales en Gob.pe"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+      rate_limit_rps: 0.5
+      accept_language: "es-PE,es;q=0.9,en;q=0.8"
+    selectors:
+      container: "a[href*='/institucion/proinnovate/campanas/']"
+      title: "."
+      link: "."
+      link_attr: "href"
+      content: "."
+    detail:
+      enabled: true
+      selectors:
+        container: "main"
+        description: "main"
+      parse:
+        date_locales: ["es", "en"]
+        currency_default: "PEN"
+
+  - id: proinnovate_startup_concursos
+    name: "ProInnóvate - Startup Concursos"
+    kind: opportunity
+    region: South America
+    country: Peru
+    strategy: html_generic
+    base_url: "https://startup.proinnovate.gob.pe/concursos/"
+    description: "Páginas de concursos de Startup Perú"
+    fetch:
+      timeout_seconds: 60
+      max_retries: 3
+      rate_limit_rps: 0.5
+      accept_language: "es-PE,es;q=0.9,en;q=0.8"
+    selectors:
+      container: "a[href*='/concursos/']"
+      title: "."
+      link: "."
+      link_attr: "href"
+      content: "."
+    detail:
+      enabled: true
+      selectors:
+        container: "main"
+        description: "main"
+      parse:
+        date_locales: ["es", "en"]
+        currency_default: "PEN"
+
+  - id: neh_usa
+    name: "National Endowment for the Humanities"
+    kind: opportunity
+    region: North America
+    country: United States
+    strategy: html_generic
+    base_url: "https://www.neh.gov/grants/listing"
+    description: "NEH Grant Opportunities"
+    fetch:
+      timeout_seconds: 30
+      max_retries: 3
+      rate_limit_rps: 1.0
+      accept_language: "en-US,en;q=0.9"
+    selectors:
+      container: ".view__row"
+      title: ".grant-teaser__title a"
+      link: ".grant-teaser__title a"
+      content: ".grant-teaser__field"
+    pagination:
+      next: "li.next a"
+    max_pages: 5
+    detail:
+      enabled: true
+      parse:
+        date_locales: ["en"]
+        currency_default: "USD"
+
+  - id: ukri_uk
+    name: "UK Research and Innovation"
+    kind: opportunity
+    region: Europe
+    country: United Kingdom
+    strategy: html_generic
+    base_url: "https://www.ukri.org/opportunity/"
+    description: "Funding opportunities from UKRI"
+    fetch:
+      timeout_seconds: 30
+      max_retries: 3
+      rate_limit_rps: 1.0
+      accept_language: "en-GB,en;q=0.9"
+    selectors:
+      container: ".type-opportunity"
+      title: ".entry-title a"
+      link: ".entry-title a"
+      content: ".entry-summary"
+    pagination:
+      next: "a.next"
+    max_pages: 5
+    detail:
+      enabled: true
+      selectors:
+        container: "main#main-content"
+        description: ".single-opportunity__entry-content"
+        deadline: ".opportunity__summary dt:contains('Closing date:') + dd"
+        amount: ".opportunity__summary dt:contains('Total fund:') + dd"
+      parse:
+        date_locales: ["en"]
+        currency_default: "GBP"
+
+  - id: sfi_ireland
+    name: "Science Foundation Ireland"
+    kind: opportunity
+    region: Europe
+    country: Ireland
+    strategy: html_generic
+    base_url: "https://www.sfi.ie/funding/funding-calls/"
+    description: "Funding calls from SFI/Research Ireland"
+    fetch:
+      timeout_seconds: 30
+      max_retries: 3
+      rate_limit_rps: 1.0
+      accept_language: "en-IE,en-GB,en;q=0.9"
+    selectors:
+      container: "ol.listing > li"
+      title: ".listing__content p:first-of-type"
+      link: "a.clearfix"
+      content: ".listing__content p.text-small"
+    pagination:
+      next: "ol.pagination li:last-child a"
+    max_pages: 5
+    detail:
+      enabled: true
+      selectors:
+        container: "main#main-content"
+        description: ".text-picture__text"
+        deadline: ".sidebar h2:contains('Deadline') ~ p"
+      parse:
+        date_locales: ["en"]
+        currency_default: "EUR"

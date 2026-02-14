@@ -18,19 +18,19 @@ import (
 // CollyFetcher implements Fetcher interface using Colly for web scraping.
 // It provides rate limiting, retries, and respects robots.txt.
 type CollyFetcher struct {
-	UserAgent           string
-	MaxRetries          int
-	RequestTimeout      time.Duration
-	DomainDelay         time.Duration
-	RandomDelayFactor   float64
-	AllowedDomains      []string
-	IgnoreRobotsTxt     bool
-	MaxBodySize         int // bytes, 0 = unlimited
-	DetectCharset       bool
-	CacheDir            string // empty = no cache
-	AllowURLRevisit     bool
-	Async               bool
-	ParallelThreads     int
+	UserAgent         string
+	MaxRetries        int
+	RequestTimeout    time.Duration
+	DomainDelay       time.Duration
+	RandomDelayFactor float64
+	AllowedDomains    []string
+	IgnoreRobotsTxt   bool
+	MaxBodySize       int // bytes, 0 = unlimited
+	DetectCharset     bool
+	CacheDir          string // empty = no cache
+	AllowURLRevisit   bool
+	Async             bool
+	ParallelThreads   int
 }
 
 // NewCollyFetcher creates a CollyFetcher with sensible defaults.
@@ -178,17 +178,17 @@ func (f *CollyFetcher) Fetch(ctx context.Context, targetURL string) (*FetchedDoc
 
 // CollyScraperConfig provides configuration for advanced Colly scraping.
 type CollyScraperConfig struct {
-	AllowedDomains    []string
-	MaxDepth          int
-	MaxPages          int
-	DomainDelay       time.Duration
-	ParallelThreads   int
-	IgnoreRobotsTxt   bool
-	UserAgent         string
-	RequestTimeout    time.Duration
-	CacheDir          string
-	Headers           map[string]string
-	ProxyURL          string
+	AllowedDomains  []string
+	MaxDepth        int
+	MaxPages        int
+	DomainDelay     time.Duration
+	ParallelThreads int
+	IgnoreRobotsTxt bool
+	UserAgent       string
+	RequestTimeout  time.Duration
+	CacheDir        string
+	Headers         map[string]string
+	ProxyURL        string
 }
 
 // CollyScraper provides advanced Colly-based scraping with callbacks.
@@ -345,11 +345,11 @@ func (s *CollyScraper) Clone() *colly.Collector {
 
 // ListPageItem represents an item extracted from a list page.
 type ListPageItem struct {
-	Title       string
-	Link        string
-	Summary     string
-	DateStr     string
-	ExtraAttrs  map[string]string
+	Title      string
+	Link       string
+	Summary    string
+	DateStr    string
+	ExtraAttrs map[string]string
 }
 
 // ScrapeListPage scrapes a list page and extracts items using selectors.

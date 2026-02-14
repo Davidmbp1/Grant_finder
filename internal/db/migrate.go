@@ -2,18 +2,18 @@ package db
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"sort"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	dir := "internal/db/migrations"
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
 
+func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if _, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			filename TEXT PRIMARY KEY,
@@ -23,15 +23,15 @@ func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to ensure schema_migrations table: %w", err)
 	}
 
-	files, err := os.ReadDir(dir)
+	entries, err := migrationsFS.ReadDir("migrations")
 	if err != nil {
-		return fmt.Errorf("failed to read migrations directory: %w", err)
+		return fmt.Errorf("failed to read embedded migrations: %w", err)
 	}
 
 	var migrationFiles []string
-	for _, file := range files {
-		if filepath.Ext(file.Name()) == ".sql" {
-			migrationFiles = append(migrationFiles, file.Name())
+	for _, entry := range entries {
+		if !entry.IsDir() && len(entry.Name()) > 4 && entry.Name()[len(entry.Name())-4:] == ".sql" {
+			migrationFiles = append(migrationFiles, entry.Name())
 		}
 	}
 	sort.Strings(migrationFiles)
@@ -46,8 +46,7 @@ func ApplyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			continue
 		}
 
-		path := filepath.Join(dir, fileName)
-		content, err := os.ReadFile(path)
+		content, err := migrationsFS.ReadFile("migrations/" + fileName)
 		if err != nil {
 			return fmt.Errorf("failed to read migration file %s: %w", fileName, err)
 		}

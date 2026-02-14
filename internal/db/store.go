@@ -489,7 +489,7 @@ type AggregationResult struct {
 
 // AggregationParams controls which subset of opportunities is used for facet counts.
 type AggregationParams struct {
-	Status     string   // "open", "closed", "all", etc.
+	Status     string // "open", "closed", "all", etc.
 	Region     []string
 	FunderType []string
 	Country    []string
