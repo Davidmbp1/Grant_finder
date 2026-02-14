@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://grantfinder-production.up.railway.app'
+  apiBaseUrl: 'https://grant-finder-api-418u.onrender.com'
 };
